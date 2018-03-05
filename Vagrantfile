@@ -1,14 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Ubuntu = 'hashicorp/precise64'
-CentOS = 'bento/centos-6.6'
-
-nodes = {
-'master' => "Ubuntu",
-'node01' => "Ubuntu",
-'node02' => "CentOS",
-}
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -21,10 +13,38 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  nodes.each do |node, flavor|
-    config.vm.box = Ubuntu
-    config.vm.define "#{node}" do |box|
-      box.vm.hostname = "#{node}.devops.local"
+  config.vm.define :master do |vm1|
+   vm1.vm.box = "bento/ubuntu-14.04"
+   vm1.vm.hostname = "master.devops.local"
+   vm1.vm.network "private_network", ip: "192.168.70.104", name: "VirtualBox Host-Only Ethernet Adapter"
+   vm1.vm.provider "virtualbox" do |vb|
+	vb.memory = "4096"
+   end
+   config.vm.provision "shell", path: "Bits/provisioners/master.sh"
+   end
+  
+  config.vm.define :node01 do |vm2|
+   vm2.vm.box = "bento/ubuntu-14.04"
+   vm2.vm.hostname = "node01.devops.local"
+   vm2.vm.network "private_network", ip: "192.168.70.105", name: "VirtualBox Host-Only Ethernet Adapter"
+   vm2.vm.provider "virtualbox" do |vb|
+	vb.memory = "512"
+   end
+   config.vm.provision "shell", path: "Bits/provisioners/Ubuntu.sh"
+   end
+   
+   config.vm.define :node02 do |vm3|
+   vm3.vm.box = "bento/centos-6.6"
+   vm3.vm.hostname = "node02.devops.local"
+   vm3.vm.network "private_network", ip: "192.168.70.106", name: "VirtualBox Host-Only Ethernet Adapter"
+   vm3.vm.provider "virtualbox" do |vb|
+	vb.memory = "512"
+   end
+   config.ssh.pty = true
+   config.vm.provision "shell", path: "Bits/provisioners/CentOS.sh"
+   end
+  end
+  
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -61,11 +81,7 @@ Vagrant.configure("2") do |config|
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-  config.vm.provider "virtualbox" do |vb|
-	vb.memory = "512"
-	if node == "master"
-		vb.memory = "4096"
-  end
+ 
   #
   # View the documentation for the provider you are using for more
   # information on available options.
@@ -77,13 +93,3 @@ Vagrant.configure("2") do |config|
   #   apt-get update
   #   apt-get install -y apache2
   # SHELL
-  if node == "master"
-        provisioner = "provisioners/master.sh"
-      else
-        provisioner = "provisioners/#{flavor}.sh"
-      end
-      box.vm.provision :shell, :path => provisioner
-	  end
-    end
-  end
-end
